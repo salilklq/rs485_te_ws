@@ -1,0 +1,32 @@
+# Conda environment for the dex-retargeting teleop service.
+#
+#   conda env create -f environment.yml     # run from src/teleop/
+#   conda activate teleop
+#   # dex-retargeting is VENDORED at the repo root (../../dex-retargeting). It is
+#   # installed editable so the runtime uses that local copy. --no-deps because its
+#   # `pin` (pinocchio) dependency has no Windows wheel and is supplied by conda-forge:
+#   pip install -e ../../dex-retargeting --no-deps
+#
+# Tested: python 3.12.13, pinocchio 4.0.0, numpy 2.4.6, nlopt 2.11.0,
+#         torch 2.12.1+cpu, dex_retargeting 0.5.0 (editable)  (Windows x64).
+name: teleop
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pinocchio        # provides `import pinocchio` (satisfies dex-retargeting's pin)
+  - nlopt
+  - numpy
+  - pyyaml
+  - lxml
+  - pip
+  - pip:
+      - torch                 # CPU build is fine
+      - pytransform3d
+      - anytree
+      - six
+      - pyserial
+      - fastapi
+      - uvicorn[standard]
+      - meshcat             # 3D viewer (real-time URDF, commanded vs actual)
+      - matplotlib          # only for tools/sim_view.py (offline 3D snapshots)

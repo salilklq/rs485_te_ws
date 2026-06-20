@@ -1,0 +1,20 @@
+# Pip-only install (use this if you are NOT using conda for pinocchio).
+# NOTE: on Windows, `pip install pin` (pinocchio) usually FAILS to build from
+# source. Prefer environment.yml (conda-forge pinocchio). If you have a working
+# pinocchio/`pin`, then:
+#
+#   pip install -r requirements.txt
+#   pip install --no-deps dex-retargeting
+#
+torch
+numpy>=2.0
+nlopt>=2.8
+pytransform3d>=3.5
+anytree>=2.12
+six
+pyyaml>=6.0
+lxml>=5.2
+pyserial>=3.5
+fastapi>=0.110
+uvicorn[standard]>=0.27
+# pinocchio: install via conda-forge (recommended) OR `pip install pin` if a wheel exists for your platform

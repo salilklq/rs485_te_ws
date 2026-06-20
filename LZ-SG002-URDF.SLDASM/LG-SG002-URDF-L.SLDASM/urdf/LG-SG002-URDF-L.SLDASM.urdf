@@ -1,0 +1,685 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="LG-SG002-URDF-L.SLDASM">
+  <link
+    name="hand_l_base_link">
+    <inertial>
+      <origin
+        xyz="0.00014393 0.0032791 0.072577"
+        rpy="0 0 0" />
+      <mass
+        value="0.981" />
+      <inertia
+        ixx="0.00028046"
+        ixy="2.7566E-06"
+        ixz="3.6149E-06"
+        iyy="0.00016607"
+        iyz="-5.1673E-06"
+        izz="0.00017073" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="hand_l_thumb_Link1">
+    <inertial>
+      <origin
+        xyz="-0.010999 4.5578E-05 -0.0068195"
+        rpy="0 0 0" />
+      <mass
+        value="0.025" />
+      <inertia
+        ixx="1.1917E-06"
+        ixy="3.1498E-08"
+        ixz="4.0496E-07"
+        iyy="2.5046E-06"
+        iyz="-2.8213E-08"
+        izz="1.8935E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_thumb_Link1.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.89804 0.92157 0.92941 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_thumb_Link1.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="hand_l_thumb_joint1"
+    type="revolute">
+    <origin
+      xyz="0.024038 -0.0172 0.073382"
+      rpy="0 0 1.5708" />
+    <parent
+      link="hand_l_base_link" />
+    <child
+      link="hand_l_thumb_Link1" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="0"
+      upper="2.0944"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="hand_l_thumb_Link2">
+    <inertial>
+      <origin
+        xyz="-0.020106 -0.00071307 -0.00050189"
+        rpy="0 0 0" />
+      <mass
+        value="0.026" />
+      <inertia
+        ixx="1.1544E-06"
+        ixy="-2.2257E-07"
+        ixz="2.7842E-08"
+        iyy="5.5078E-06"
+        iyz="1.4408E-07"
+        izz="5.7386E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_thumb_Link2.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.89804 0.92157 0.92941 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_thumb_Link2.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="hand_l_thumb_joint2"
+    type="revolute">
+    <origin
+      xyz="-0.019998 -0.00029048 -0.002625"
+      rpy="-1.5708 0 0" />
+    <parent
+      link="hand_l_thumb_Link1" />
+    <child
+      link="hand_l_thumb_Link2" />
+    <axis
+      xyz="-0.014524 0 0.99989" />
+    <limit
+      lower="0"
+      upper="1.5708"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="hand_l_thumb_Link3">
+    <inertial>
+      <origin
+        xyz="-0.02206 0.0020051 -8.9965E-05"
+        rpy="0 0 0" />
+      <mass
+        value="0.022" />
+      <inertia
+        ixx="4.6091E-07"
+        ixy="1.4244E-07"
+        ixz="-5.5554E-08"
+        iyy="2.1878E-06"
+        iyz="1.1932E-08"
+        izz="1.9573E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_thumb_Link3.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.89804 0.92157 0.92941 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_thumb_Link3.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="hand_l_thumb_joint3"
+    type="revolute">
+    <origin
+      xyz="-0.040982 -0.0039742 -0.0007953"
+      rpy="0 0 0" />
+    <parent
+      link="hand_l_thumb_Link2" />
+    <child
+      link="hand_l_thumb_Link3" />
+    <axis
+      xyz="-0.014524 0 0.99989" />
+    <limit
+      lower="0"
+      upper="1.5708"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="hand_l_index_Link1">
+    <inertial>
+      <origin
+        xyz="0.00071307 -0.020034 -0.0017685"
+        rpy="0 0 0" />
+      <mass
+        value="0.026" />
+      <inertia
+        ixx="5.5078E-06"
+        ixy="2.3246E-07"
+        ixz="-1.2752E-07"
+        iyy="1.1746E-06"
+        iyz="-3.0474E-07"
+        izz="5.7184E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_index_Link1.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.89804 0.92157 0.92941 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_index_Link1.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="hand_l_index_joint1"
+    type="revolute">
+    <origin
+      xyz="0.0022544 -0.029001 0.12577"
+      rpy="-1.5708 0 0" />
+    <parent
+      link="hand_l_base_link" />
+    <child
+      link="hand_l_index_Link1" />
+    <axis
+      xyz="0 -0.087156 0.99619" />
+    <limit
+      lower="0"
+      upper="1.5708"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="hand_l_index_Link2">
+    <inertial>
+      <origin
+        xyz="-2.9272E-05 -0.017018 -0.0012702"
+        rpy="0 0 0" />
+      <mass
+        value="0.022" />
+      <inertia
+        ixx="2.1929E-06"
+        ixy="-1.412E-07"
+        ixz="-2.2253E-08"
+        iyy="4.82E-07"
+        iyz="-1.6379E-07"
+        izz="1.9505E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_index_Link2.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.89804 0.92157 0.92941 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_index_Link2.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="hand_l_index_joint2"
+    type="revolute">
+    <origin
+      xyz="0.002 -0.044829 -0.003922"
+      rpy="0 0 0" />
+    <parent
+      link="hand_l_index_Link1" />
+    <child
+      link="hand_l_index_Link2" />
+    <axis
+      xyz="0 -0.087156 0.99619" />
+    <limit
+      lower="0"
+      upper="1.5708"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="hand_l_middle_Link1">
+    <inertial>
+      <origin
+        xyz="0.00071308 -0.020112 -1.5738E-05"
+        rpy="0 0 0" />
+      <mass
+        value="0.026" />
+      <inertia
+        ixx="5.5078E-06"
+        ixy="2.2045E-07"
+        ixz="-1.473E-07"
+        iyy="1.1562E-06"
+        iyz="9.4401E-08"
+        izz="5.7368E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_middle_Link1.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.89804 0.92157 0.92941 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_middle_Link1.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="hand_l_middle_joint1"
+    type="revolute">
+    <origin
+      xyz="0.0022544 -0.005 0.13076"
+      rpy="-1.5708 0 0" />
+    <parent
+      link="hand_l_base_link" />
+    <child
+      link="hand_l_middle_Link1" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="0"
+      upper="1.5708"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="hand_l_middle_Link2">
+    <inertial>
+      <origin
+        xyz="-2.9269E-05 -0.017064 0.00021787"
+        rpy="0 0 0" />
+      <mass
+        value="0.022" />
+      <inertia
+        ixx="2.1929E-06"
+        ixy="-1.426E-07"
+        ixz="-9.8617E-09"
+        iyy="4.6471E-07"
+        iyz="-3.3799E-08"
+        izz="1.9678E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_middle_Link2.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.89804 0.92157 0.92941 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_middle_Link2.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="hand_l_middle_joint2"
+    type="revolute">
+    <origin
+      xyz="0.002 -0.045 0"
+      rpy="0 0 0" />
+    <parent
+      link="hand_l_middle_Link1" />
+    <child
+      link="hand_l_middle_Link2" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="0"
+      upper="1.5708"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="hand_l_ring_Link1">
+    <inertial>
+      <origin
+        xyz="0.00071307 -0.020036 0.0017372"
+        rpy="0 0 0" />
+      <mass
+        value="0.026" />
+      <inertia
+        ixx="5.5078E-06"
+        ixy="2.0678E-07"
+        ixz="-1.6595E-07"
+        iyy="1.2074E-06"
+        iyz="4.9068E-07"
+        izz="5.6856E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_ring_Link1.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.89804 0.92157 0.92941 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_ring_Link1.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="hand_l_ring_joint1"
+    type="revolute">
+    <origin
+      xyz="0.0022544 0.018999 0.12574"
+      rpy="-1.5708 0 0" />
+    <parent
+      link="hand_l_base_link" />
+    <child
+      link="hand_l_ring_Link1" />
+    <axis
+      xyz="0 0.087156 0.99619" />
+    <limit
+      lower="0"
+      upper="1.5708"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="hand_l_ring_Link2">
+    <inertial>
+      <origin
+        xyz="-2.9287E-05 -0.01698 0.0017043"
+        rpy="0 0 0" />
+      <mass
+        value="0.022" />
+      <inertia
+        ixx="2.1929E-06"
+        ixy="-1.4292E-07"
+        ixz="2.6048E-09"
+        iyy="4.7026E-07"
+        iyz="9.7218E-08"
+        izz="1.9622E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_ring_Link2.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.89804 0.92157 0.92941 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_ring_Link2.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="hand_l_ring_joint2"
+    type="revolute">
+    <origin
+      xyz="0.002 -0.044829 0.003922"
+      rpy="0 0 0" />
+    <parent
+      link="hand_l_ring_Link1" />
+    <child
+      link="hand_l_ring_Link2" />
+    <axis
+      xyz="0 0.087156 0.99619" />
+    <limit
+      lower="0"
+      upper="1.5708"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="hand_l_pinky_Link1">
+    <inertial>
+      <origin
+        xyz="0.00014393 0.0032791 0.072577"
+        rpy="0 0 0" />
+      <mass
+        value="0.026" />
+      <inertia
+        ixx="0.00028046"
+        ixy="2.7566E-06"
+        ixz="3.6149E-06"
+        iyy="0.00016607"
+        iyz="-5.1673E-06"
+        izz="0.00017073" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_pinky_Link1.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_pinky_Link1.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="hand_l_pinky_joint1"
+    type="revolute">
+    <origin
+      xyz="0.0022544 0.042497 0.11872"
+      rpy="-1.5708 0 0" />
+    <parent
+      link="hand_l_base_link" />
+    <child
+      link="hand_l_pinky_Link1" />
+    <axis
+      xyz="0 0.17365 0.98481" />
+    <limit
+      lower="0"
+      upper="1.5708"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="hand_l_pinky_Link2">
+    <inertial>
+      <origin
+        xyz="-2.9287E-05 -0.016767 0.0031776"
+        rpy="0 0 0" />
+      <mass
+        value="0.022" />
+      <inertia
+        ixx="2.1929E-06"
+        ixy="-1.4215E-07"
+        ixz="1.5051E-08"
+        iyy="4.9847E-07"
+        iyz="2.2528E-07"
+        izz="1.934E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_pinky_Link2.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.89804 0.92157 0.92941 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://LG-SG002-URDF-L.SLDASM/meshes/hand_l_pinky_Link2.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="hand_l_pinky_joint2"
+    type="revolute">
+    <origin
+      xyz="0.002 -0.044316 0.0078142"
+      rpy="0 0 0" />
+    <parent
+      link="hand_l_pinky_Link1" />
+    <child
+      link="hand_l_pinky_Link2" />
+    <axis
+      xyz="0 0.17365 0.98481" />
+    <limit
+      lower="0"
+      upper="1.5708"
+      effort="0"
+      velocity="0" />
+  </joint>
+</robot>

@@ -20,3 +20,17 @@ ARM64/
 *.user
 *.suo
 *.log
+*.cfg
+
+# NOTE: dex-retargeting/ is a VENDORED third-party dependency (kept on purpose,
+# like ManusSDK_v3.1.1/). Do not ignore it.
+# Regenerable large mesh copies (not needed for retargeting, only for visualization):
+src/teleop/assets/meshes/
+__pycache__/
+*.pyc
+src/teleop/sim_*.png
+
+# Linux ManusSDK prebuilt shared libs (libManusSDK*.so) are >100MB each — over
+# GitHub's 100MB file limit — and are unused on the Windows workflow. The SDK
+# headers/sources/Windows libs are kept; rebuild these from the SDK if needed.
+ManusSDK_v3.1.1/**/*.so

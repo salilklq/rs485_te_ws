@@ -1,0 +1,21 @@
+retargeting:
+  type: DexPilot
+  urdf_path: right_hand.urdf
+
+  # 6 actuated joints, in register order reg0..reg5. Distal joints are coupled
+  # via <mimic> in the URDF and must NOT be listed here.
+  #   reg0 thumb opposition/yaw, reg1 thumb flex, reg2..5 index/middle/ring/pinky flex
+  target_joint_names: [ 'hand_r_thumb_joint1', 'hand_r_thumb_joint2',
+                        'hand_r_index_joint1', 'hand_r_middle_joint1',
+                        'hand_r_ring_joint1',  'hand_r_pinky_joint1' ]
+
+  wrist_link_name: "hand_r_base_link"
+  finger_tip_link_names: [ "hand_r_thumb_tip", "hand_r_index_tip", "hand_r_middle_tip",
+                           "hand_r_ring_tip", "hand_r_pinky_tip" ]
+
+  # Human-hand to robot-hand size ratio. Tune in the panel; ~1.0 since this hand
+  # is roughly human-sized.
+  scaling_factor: 1.0
+
+  # Smaller alpha = stronger smoothing (more lag). Tune live.
+  low_pass_alpha: 0.25

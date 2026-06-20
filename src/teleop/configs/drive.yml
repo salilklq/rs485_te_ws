@@ -1,0 +1,68 @@
+# RS485 / drive configuration for both hands.
+#
+# Position registers 0..5 take 0..1000 (0 = open/straight & thumb not opposed,
+# 1000 = fully closed / thumb fully opposed). Each register is produced from one
+# retargeted joint angle (radians) by:
+#       reg = out_lo + (q - qmin)/(qmax - qmin) * (out_hi - out_lo)   (clamped, optional invert)
+# qmin/qmax default to the URDF joint limits printed by make_retarget_urdf.py.
+#
+# calib (optional): a measured per-joint remap applied AFTER the formula above,
+# given as [[raw, real], ...] anchor points in register space (monotonic, pinned
+# at [0,0] and [1000,1000]). It corrects the residual sim->real gap: the CAD URDF
+# reaches a finger curl at ~half the real motor travel, so without calibration the
+# open/fist ends look right but the mid-range is compressed and a pinch never
+# closes. Seeded from the measured real contact (thumb<->index finger at reg 869)
+# vs what the pipeline emits at that pinch (~445). TUNE the middle anchor on
+# hardware: if a finger overshoots, lower the 'real' number; if it undershoots,
+# raise it. Same finger curve applied to index/middle/ring/pinky.
+#
+# couple_from (optional): drive this register from another register's value. The
+# thumb FLEX (reg1) mirrors thumb OPPOSITION (reg0) because DexPilot can't resolve
+# the 2-DOF thumb's flex from the tip alone (its raw retarget is erratic), while in
+# every real pinch/grasp flex tracks opp (measured flex 679 ~= opp 670).
+#
+# Wiring: give each hand its own `port`. If both hands share one RS485 bus, set
+# the SAME port string for both and they will share the serial handle, routed by
+# Modbus `slave` address (right = 1, left = 2 per the protocol doc).
+
+common:
+  baud: 115200
+  rate_hz: 60            # command update + serial write rate
+  smoothing_alpha: 1.0   # extra EMA in register space on top of retargeting low_pass (1.0 = off)
+  deadband: 4            # min |register delta| before a write is sent
+  speed: 1000             # written once to regs 6..11 at startup (0..1000); -1 = skip
+  force: 1000             # written once to regs 12..17 at startup (0..1000); -1 = skip
+  read_feedback: true    # poll regs 18..46 (force / joint angle / motor position) for the panel
+  relax_on_exit: true    # write all position registers to 0 on shutdown
+
+right:
+  enabled: true
+  port: "COM6"           # real right hand
+  slave: 1
+  joints:                # order IS register order reg0..reg5
+    - { name: hand_r_thumb_joint1,  qmin: 0.0, qmax: 2.0944, out_lo: 0, out_hi: 1000, invert: false }  # reg0 thumb opposition (retargeted; responsive)
+    - { name: hand_r_thumb_joint2,  qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, couple_from: 0 }  # reg1 thumb flex = MIRRORS opp (reg1's own retarget is erratic; flex~=opp in every pinch)
+    - { name: hand_r_index_joint1,  qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[445,869],[1000,1000]] }  # reg2 index
+    - { name: hand_r_middle_joint1, qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[445,869],[1000,1000]] }  # reg3 middle
+    - { name: hand_r_ring_joint1,   qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[445,869],[1000,1000]] }  # reg4 ring
+    - { name: hand_r_pinky_joint1,  qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[445,869],[1000,1000]] }  # reg5 pinky
+
+left:
+  enabled: true
+  port: "COM16"          # real left hand
+  slave: 2
+  joints:
+    - { name: hand_l_thumb_joint1,  qmin: 0.0, qmax: 2.0944, out_lo: 0, out_hi: 1000, invert: false }  # reg0 thumb opposition (retargeted; responsive)
+    - { name: hand_l_thumb_joint2,  qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, couple_from: 0 }  # reg1 thumb flex = MIRRORS opp
+    - { name: hand_l_index_joint1,  qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[445,869],[1000,1000]] }  # reg2 index
+    - { name: hand_l_middle_joint1, qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[445,869],[1000,1000]] }  # reg3 middle
+    - { name: hand_l_ring_joint1,   qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[445,869],[1000,1000]] }  # reg4 ring
+    - { name: hand_l_pinky_joint1,  qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[445,869],[1000,1000]] }  # reg5 pinky
+
+# Keypoint stream (from the C++ ManusKeypointStreamer over UDP)
+udp:
+  host: "127.0.0.1"
+  port: 9001
+  # MANUS raw-skeleton positions -> meters. dexpilot pinch thresholds are in
+  # meters, so this must be correct. MANUS VUH unitScale=1.0 streams meters, so 1.0.
+  position_scale: 1.0
