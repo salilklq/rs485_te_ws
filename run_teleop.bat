@@ -19,6 +19,11 @@ if not exist "%EXE%" (
   exit /b 1
 )
 
+echo [0/3] Stopping any previous streamer / service instances (prevents COM-port contention)...
+taskkill /F /IM ManusKeypointStreamer_Windows.exe >nul 2>&1
+powershell -NoProfile -Command "Get-CimInstance Win32_Process | Where-Object { $_.Name -in @('python.exe','conda.exe') -and $_.CommandLine -match 'dexhand_teleop.main' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }" >nul 2>&1
+"%SystemRoot%\System32\timeout.exe" /t 2 /nobreak >nul 2>&1
+
 echo [1/3] Starting MANUS keypoint streamer (new window)...
 start "ManusKeypointStreamer" cmd /k "%EXE%"
 

@@ -6,20 +6,23 @@
 #       reg = out_lo + (q - qmin)/(qmax - qmin) * (out_hi - out_lo)   (clamped, optional invert)
 # qmin/qmax default to the URDF joint limits printed by make_retarget_urdf.py.
 #
-# calib (optional): a measured per-joint remap applied AFTER the formula above,
-# given as [[raw, real], ...] anchor points in register space (monotonic, pinned
-# at [0,0] and [1000,1000]). It corrects the residual sim->real gap: the CAD URDF
-# reaches a finger curl at ~half the real motor travel, so without calibration the
-# open/fist ends look right but the mid-range is compressed and a pinch never
-# closes. Seeded from the measured real contact (thumb<->index finger at reg 869)
-# vs what the pipeline emits at that pinch (~445). TUNE the middle anchor on
-# hardware: if a finger overshoots, lower the 'real' number; if it undershoots,
-# raise it. Same finger curve applied to index/middle/ring/pinky.
+# calib (optional): a measured per-joint remap applied AFTER the formula above (and
+# after couple_from), given as [[raw, real], ...] anchor points in register space,
+# interpolated with a monotone cubic (C1-smooth, no slope kink) so motion has no
+# velocity jump. It corrects the sim->real gap (the CAD URDF reaches a curl at ~half
+# the real motor travel) AND encodes the per-finger contact point. Each finger carries
+# its measured thumb<->finger contact: index [445->744], middle [445->843] (~445 is
+# what the pipeline emits at a pinch). Leading [50->0] = open-release deadzone.
+# ring/pinky can't oppose the thumb -> plain curl for grasp. TUNE a contact anchor on
+# hardware: overshoot -> lower it, undershoot -> raise it.
+# (Per-hand! these are the COM7 right hand's numbers; another hand needs its own.)
 #
-# couple_from (optional): drive this register from another register's value. The
-# thumb FLEX (reg1) mirrors thumb OPPOSITION (reg0) because DexPilot can't resolve
-# the 2-DOF thumb's flex from the tip alone (its raw retarget is erratic), while in
-# every real pinch/grasp flex tracks opp (measured flex 679 ~= opp 670).
+# couple_from (optional): take this register's value from ANOTHER register, BEFORE
+# this joint's own calib. The thumb FLEX (reg1) is derived from OPPOSITION (reg0)
+# via calib -- NOT a 1:1 mirror: DexPilot can't resolve the 2-DOF thumb flex from the
+# tip alone, but measured pinches show flex is ~constant ~400 while opp varies by
+# target (index opp574/flex429, middle opp1000/flex388). So reg1 = calib(reg0):
+# ~0 when open, ramping to ~400-430 across the pinch range.
 #
 # Wiring: give each hand its own `port`. If both hands share one RS485 bus, set
 # the SAME port string for both and they will share the serial handle, routed by
@@ -28,7 +31,8 @@
 common:
   baud: 115200
   rate_hz: 60            # command update + serial write rate
-  smoothing_alpha: 1.0   # extra EMA in register space on top of retargeting low_pass (1.0 = off)
+  smoothing_alpha: 0.5   # extra EMA in register space on top of retargeting low_pass (1.0 = off)
+  max_step: 50           # per-register slew limit (units/tick @ rate_hz); eases motion so a pinch never snaps. 0 = off
   deadband: 4            # min |register delta| before a write is sent
   speed: 1000             # written once to regs 6..11 at startup (0..1000); -1 = skip
   force: 1000             # written once to regs 12..17 at startup (0..1000); -1 = skip
@@ -37,27 +41,27 @@ common:
 
 right:
   enabled: true
-  port: "COM6"           # real right hand
+  port: "COM16"           # real right hand
   slave: 1
   joints:                # order IS register order reg0..reg5
     - { name: hand_r_thumb_joint1,  qmin: 0.0, qmax: 2.0944, out_lo: 0, out_hi: 1000, invert: false }  # reg0 thumb opposition (retargeted; responsive)
-    - { name: hand_r_thumb_joint2,  qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, couple_from: 0 }  # reg1 thumb flex = MIRRORS opp (reg1's own retarget is erratic; flex~=opp in every pinch)
-    - { name: hand_r_index_joint1,  qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[445,869],[1000,1000]] }  # reg2 index
-    - { name: hand_r_middle_joint1, qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[445,869],[1000,1000]] }  # reg3 middle
-    - { name: hand_r_ring_joint1,   qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[445,869],[1000,1000]] }  # reg4 ring
-    - { name: hand_r_pinky_joint1,  qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[445,869],[1000,1000]] }  # reg5 pinky
+    - { name: hand_r_thumb_joint2,  qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, couple_from: 0, calib: [[0,0],[574,429],[1000,388]] }  # reg1 thumb flex = calib(opp): 0 open, ~430@opp574, ~390@opp1000 (measured; NOT a mirror)
+    - { name: hand_r_index_joint1,  qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[50,0],[445,744],[1000,1000]] }  # reg2 index (measured thumb<->index contact = 744)
+    - { name: hand_r_middle_joint1, qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[50,0],[445,843],[1000,1000]] }  # reg3 middle (measured thumb<->middle contact = 843)
+    - { name: hand_r_ring_joint1,   qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[50,0],[1000,1000]] }  # reg4 ring (no thumb pinch; plain curl for grasp)
+    - { name: hand_r_pinky_joint1,  qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[50,0],[1000,1000]] }  # reg5 pinky (no thumb pinch; plain curl for grasp)
 
 left:
-  enabled: true
+  enabled: false
   port: "COM16"          # real left hand
   slave: 2
   joints:
     - { name: hand_l_thumb_joint1,  qmin: 0.0, qmax: 2.0944, out_lo: 0, out_hi: 1000, invert: false }  # reg0 thumb opposition (retargeted; responsive)
     - { name: hand_l_thumb_joint2,  qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, couple_from: 0 }  # reg1 thumb flex = MIRRORS opp
-    - { name: hand_l_index_joint1,  qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[445,869],[1000,1000]] }  # reg2 index
-    - { name: hand_l_middle_joint1, qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[445,869],[1000,1000]] }  # reg3 middle
-    - { name: hand_l_ring_joint1,   qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[445,869],[1000,1000]] }  # reg4 ring
-    - { name: hand_l_pinky_joint1,  qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[445,869],[1000,1000]] }  # reg5 pinky
+    - { name: hand_l_index_joint1,  qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[50,0],[250,500],[445,869],[1000,1000]] }  # reg2 index
+    - { name: hand_l_middle_joint1, qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[50,0],[250,500],[445,869],[1000,1000]] }  # reg3 middle
+    - { name: hand_l_ring_joint1,   qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[50,0],[250,500],[445,869],[1000,1000]] }  # reg4 ring
+    - { name: hand_l_pinky_joint1,  qmin: 0.0, qmax: 3.1416, out_lo: 0, out_hi: 1000, invert: false, calib: [[0,0],[50,0],[250,500],[445,869],[1000,1000]] }  # reg5 pinky
 
 # Keypoint stream (from the C++ ManusKeypointStreamer over UDP)
 udp:

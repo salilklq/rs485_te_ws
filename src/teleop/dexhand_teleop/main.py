@@ -13,13 +13,13 @@ import argparse
 import threading
 import time
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict
 
 import numpy as np
 import yaml
 
 from . import keypoints, protocol
-from .hand_driver import HandDriver, SerialBus, joints_from_config
+from .hand_driver import HandDriver, RegisterSmoother, SerialBus, joints_from_config
 from .manus_receiver import ManusReceiver
 from .retarget import HandRetargeter
 
@@ -65,14 +65,16 @@ class HandWorker:
                                  deadband=int(common.get("deadband", 4)))
         self.state.write_enabled = self.driver.writing_enabled
 
-        # register-space extra smoothing
+        # register-space temporal conditioning: EMA + per-register slew-rate limit
+        # (max_step/tick). The slew limit is what keeps the pinch from being yanked.
         self.smoothing_alpha = float(common.get("smoothing_alpha", 1.0))
-        self._smoothed: Optional[np.ndarray] = None
+        self.max_step = float(common.get("max_step", 50))
+        self._smoother = RegisterSmoother(self.smoothing_alpha, self.max_step)
         self._calib: Dict[str, np.ndarray] = {}
         self._fb_decimate = 0
 
         # startup speed/force
-        if self.driver.writing_enabled:
+        if self.driver.bus.intended:
             if int(common.get("speed", -1)) >= 0:
                 self.driver.write_speed(int(common["speed"]))
             if int(common.get("force", -1)) >= 0:
@@ -94,13 +96,9 @@ class HandWorker:
                                                position_scale=self.position_scale)
                 qmap = self.retargeter.retarget(mano)
                 tq = self.retargeter.target_qpos(qmap)
-                regs = np.array(self.driver.qpos_to_registers(tq), dtype=float)
-                if self._smoothed is None or self.smoothing_alpha >= 1.0:
-                    self._smoothed = regs
-                else:
-                    self._smoothed = self._smoothed + self.smoothing_alpha * (regs - self._smoothed)
-                regs_i = [int(round(v)) for v in self._smoothed]
-                if self.driver.writing_enabled:
+                regs_i = [int(round(v)) for v in
+                          self._smoother.step(self.driver.qpos_to_registers(tq))]
+                if self.driver.bus.intended:
                     self.driver.write_positions(regs_i)
                 with self.state.lock:
                     self.state.connected = True
@@ -118,7 +116,7 @@ class HandWorker:
                     self.state.connected = False
                     self.state.age = age
 
-            if read_fb and self.driver.writing_enabled:
+            if read_fb and self.driver.bus.intended:
                 self._fb_decimate = (self._fb_decimate + 1) % 5  # ~rate/5
                 if self._fb_decimate == 0:
                     fb = self.driver.read_feedback()
@@ -145,6 +143,14 @@ class HandWorker:
             self.retargeter.low_pass_alpha = float(value)
         elif key == "smoothing_alpha":
             self.smoothing_alpha = float(np.clip(value, 0.0, 1.0))
+            self._smoother.alpha = self.smoothing_alpha
+        elif key == "max_step":
+            self.max_step = float(max(0.0, value))
+            self._smoother.max_step = self.max_step
+        elif key == "project_dist":
+            self.retargeter.project_dist = float(value)
+        elif key == "escape_dist":
+            self.retargeter.escape_dist = float(value)
         elif key == "deadband":
             self.driver.deadband = int(value)
         elif key == "speed" and self.driver.writing_enabled:
@@ -187,7 +193,7 @@ class HandWorker:
             self.driver.relax()
         elif cmd == "reset":
             self.retargeter.reset()
-            self._smoothed = None
+            self._smoother.reset()
 
 
 class TeleopService:
@@ -277,6 +283,9 @@ class TeleopService:
                     "scaling": w.retargeter.scaling,
                     "low_pass_alpha": w.retargeter.low_pass_alpha,
                     "smoothing_alpha": w.smoothing_alpha,
+                    "max_step": w.max_step,
+                    "project_dist": w.retargeter.project_dist,
+                    "escape_dist": w.retargeter.escape_dist,
                     "deadband": w.driver.deadband,
                     "joints": [
                         {"name": jm.name, "qmin": round(jm.qmin, 4), "qmax": round(jm.qmax, 4),

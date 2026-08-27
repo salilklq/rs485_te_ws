@@ -134,6 +134,13 @@ button.act-btn{border:0;border-radius:9px;padding:10px 16px;font-weight:700;curs
     <div class="note">缩放=人手/机器手尺寸比；低通越小越平滑但越滞后。</div>
   </div>
 
+  <div class="card"><h2>平滑 / 防突兀（实时生效）</h2>
+    <div class="srow"><label>限速 max_step</label><input id="p_max_step" type="range" min="0" max="200" step="5"><div class="val" id="v_max_step"></div></div>
+    <div class="srow"><label>捏合触发 project</label><input id="p_project_dist" type="range" min="0.004" max="0.05" step="0.001"><div class="val" id="v_project_dist"></div></div>
+    <div class="srow"><label>捏合释放 escape</label><input id="p_escape_dist" type="range" min="0.006" max="0.06" step="0.001"><div class="val" id="v_escape_dist"></div></div>
+    <div class="note">限速=每帧寄存器最大变化(越小越柔、越滞后)；捏合触发越小，对捏越不“突兀强拉”(仅最后这点距离才助力合拢)。escape 要略大于 project。</div>
+  </div>
+
   <div class="card"><h2>速度 / 力（一次性下发 6–11 / 12–17）</h2>
     <div class="srow"><label>速度 speed</label><input id="p_speed" type="range" min="0" max="1000" step="10"><div class="val" id="v_speed">600</div></div>
     <div class="srow"><label>力 force</label><input id="p_force" type="range" min="0" max="1000" step="10"><div class="val" id="v_force">400</div></div>
@@ -162,7 +169,7 @@ button.act-btn{border:0;border-radius:9px;padding:10px 16px;font-weight:700;curs
 const FNAMES=['拇指旋转','拇指弯曲','食指','中指','无名指','小指'];
 let hands=[], cur=null, dragging=false;
 const $=id=>document.getElementById(id);
-['p_scaling','p_low_pass_alpha','p_smoothing_alpha','p_deadband','p_speed','p_force'].forEach(id=>{
+['p_scaling','p_low_pass_alpha','p_smoothing_alpha','p_max_step','p_project_dist','p_escape_dist','p_deadband','p_speed','p_force'].forEach(id=>{
   const el=$(id); el.addEventListener('input',()=>{dragging=true; const v=$('v_'+id.slice(2)); if(v)v.textContent=el.value;});
   el.addEventListener('change',()=>{dragging=false; sendParam(id.slice(2), parseFloat(el.value));});
 });
@@ -199,7 +206,7 @@ async function tick(){
       const force=fb.force_g[i*2]||0; $('av'+i).textContent=mp+' / '+force+'g';}
     else {$('ab'+i).style.width='0%'; $('av'+i).textContent='-';}}
   if(applyParams && !dragging){
-    for(const k of ['scaling','low_pass_alpha','smoothing_alpha','deadband']){const el=$('p_'+k); if(el&&h[k]!=null){el.value=h[k]; const v=$('v_'+k); if(v)v.textContent=(+h[k]).toFixed(k==='deadband'?0:2);}}
+    for(const k of ['scaling','low_pass_alpha','smoothing_alpha','max_step','project_dist','escape_dist','deadband']){const el=$('p_'+k); if(el&&h[k]!=null){el.value=h[k]; const v=$('v_'+k); if(v)v.textContent=(+h[k]).toFixed((k==='deadband'||k==='max_step')?0:(k.endsWith('_dist')?3:2));}}
     applyParams=false;
   }
   const jk=JSON.stringify(h.joints.map(j=>j.name)); if(jk!==lastJointsKey){jointsHtml(h.joints); lastJointsKey=jk;}

@@ -19,3 +19,13 @@ retargeting:
 
   # Smaller alpha = stronger smoothing (more lag). Tune live.
   low_pass_alpha: 0.25
+
+  # DexPilot pinch-projection thresholds (meters). When a human thumb<->finger
+  # tip distance drops below project_dist, DexPilot snaps that fingertip pair to
+  # contact (weight 1->200, target distance->0). The defaults (0.03/0.05) start
+  # that snap from 3cm out, which feels like an abrupt "hard pull" into the pinch.
+  # Shrunk here so the assist only engages in the final ~1cm (escape > project for
+  # hysteresis) -> the pinch closes smoothly; the calib curve does the real travel.
+  # Raise project_dist if a pinch fails to fully close on hardware.
+  project_dist: 0.010
+  escape_dist: 0.020

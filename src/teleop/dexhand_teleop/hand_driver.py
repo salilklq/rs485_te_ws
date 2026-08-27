@@ -73,16 +73,45 @@ class SerialBus:
 
     def __init__(self, port: str, baud: int):
         self.port = port
+        self.baud = baud
         self.lock = threading.Lock()
         self.ser = None
-        if port and serial is not None:
-            try:
-                self.ser = serial.Serial(port=port, baudrate=baud, bytesize=8,
-                                         parity="N", stopbits=1, timeout=0.05,
-                                         write_timeout=0.1)
-            except Exception as e:
-                print(f"[serial] could not open {port}: {e} -> this hand runs dry-run")
-                self.ser = None
+        # intended = a real port was configured; transient I/O errors then trigger a
+        # throttled reopen instead of permanently dropping to dry-run.
+        self.intended = bool(port) and serial is not None
+        self._next_open = 0.0
+        self._open(initial=True)
+
+    def _open(self, initial: bool = False):
+        """(Re)open the port, throttled to once/2s. Lets teleop transparently recover
+        from a USB hiccup / re-enumeration / brief contention instead of the control
+        thread dying on a single 'access denied' (PermissionError) serial error."""
+        if not self.intended:
+            return
+        now = time.perf_counter()
+        if not initial and now < self._next_open:
+            return
+        self._next_open = now + 2.0
+        try:
+            self.ser = serial.Serial(port=self.port, baudrate=self.baud, bytesize=8,
+                                     parity="N", stopbits=1, timeout=0.05,
+                                     write_timeout=0.1)
+            if not initial:
+                print(f"[serial] {self.port} reopened", flush=True)
+        except Exception as e:
+            if initial:
+                print(f"[serial] could not open {self.port}: {e} -> retrying", flush=True)
+            self.ser = None
+
+    def _fail(self, e: Exception):
+        """A serial op raised: drop the now-invalid handle so the next call reopens."""
+        try:
+            if self.ser is not None:
+                self.ser.close()
+        except Exception:
+            pass
+        self.ser = None
+        print(f"[serial] {self.port} I/O error ({type(e).__name__}: {e}); will reopen", flush=True)
 
     @classmethod
     def get(cls, port: str, baud: int) -> "SerialBus":
@@ -97,32 +126,88 @@ class SerialBus:
         return self.ser is not None
 
     def write(self, frame: bytes):
-        if self.ser is None:
+        if not self.intended:
             return
         with self.lock:
-            self.ser.reset_input_buffer()
-            self.ser.write(frame)
+            if self.ser is None:
+                self._open()
+                if self.ser is None:
+                    return
+            try:
+                self.ser.reset_input_buffer()
+                self.ser.write(frame)
+            except (serial.SerialException, OSError) as e:
+                self._fail(e)
 
     def query(self, frame: bytes, expect_bytes: int) -> Optional[bytes]:
-        if self.ser is None:
+        if not self.intended:
             return None
         with self.lock:
-            self.ser.reset_input_buffer()
-            self.ser.write(frame)
-            deadline = time.perf_counter() + 0.1
-            buf = bytearray()
-            while len(buf) < expect_bytes and time.perf_counter() < deadline:
-                chunk = self.ser.read(expect_bytes - len(buf))
-                if chunk:
-                    buf += chunk
-            return bytes(buf) if len(buf) >= expect_bytes else None
+            if self.ser is None:
+                self._open()
+                if self.ser is None:
+                    return None
+            try:
+                self.ser.reset_input_buffer()
+                self.ser.write(frame)
+                deadline = time.perf_counter() + 0.1
+                buf = bytearray()
+                while len(buf) < expect_bytes and time.perf_counter() < deadline:
+                    chunk = self.ser.read(expect_bytes - len(buf))
+                    if chunk:
+                        buf += chunk
+                return bytes(buf) if len(buf) >= expect_bytes else None
+            except (serial.SerialException, OSError) as e:
+                self._fail(e)
+                return None
 
     def close(self):
+        self.intended = False
         if self.ser is not None:
             try:
                 self.ser.close()
             finally:
                 self.ser = None
+
+
+def _interp_monotone(x: float, xs: List[float], ys: List[float]) -> float:
+    """Monotone cubic (Fritsch-Carlson) interpolation at scalar x.
+
+    xs strictly ascending; clamps flat outside [xs[0], xs[-1]]. With 2 points this
+    reduces to linear. Used for the calib curve so a multi-anchor remap is C1-smooth
+    (no slope kink, unlike np.interp) while staying monotonic (no overshoot past the
+    anchors) -- the kink is what made the old 3-point pinch curve feel abrupt."""
+    n = len(xs)
+    if n == 0:
+        return float(x)
+    if n == 1 or x <= xs[0]:
+        return float(ys[0])
+    if x >= xs[-1]:
+        return float(ys[-1])
+    h = [xs[i + 1] - xs[i] for i in range(n - 1)]
+    d = [(ys[i + 1] - ys[i]) / h[i] for i in range(n - 1)]
+    m = [0.0] * n
+    m[0], m[-1] = d[0], d[-1]
+    for i in range(1, n - 1):
+        m[i] = 0.0 if d[i - 1] * d[i] <= 0 else (d[i - 1] + d[i]) / 2.0
+    for i in range(n - 1):  # Fritsch-Carlson monotonicity limiter
+        if d[i] == 0.0:
+            m[i] = m[i + 1] = 0.0
+        else:
+            a, b = m[i] / d[i], m[i + 1] / d[i]
+            s = a * a + b * b
+            if s > 9.0:
+                t = 3.0 / (s ** 0.5)
+                m[i], m[i + 1] = t * a * d[i], t * b * d[i]
+    for i in range(n - 1):
+        if xs[i] <= x <= xs[i + 1]:
+            t = (x - xs[i]) / h[i]
+            t2, t3 = t * t, t * t * t
+            return float((2 * t3 - 3 * t2 + 1) * ys[i]
+                         + (t3 - 2 * t2 + t) * h[i] * m[i]
+                         + (-2 * t3 + 3 * t2) * ys[i + 1]
+                         + (t3 - t2) * h[i] * m[i + 1])
+    return float(ys[-1])
 
 
 @dataclass
@@ -152,14 +237,17 @@ class JointMap:
             return val
         xs = [p[0] for p in self.calib]
         ys = [p[1] for p in self.calib]
-        return float(np.interp(val, xs, ys))
+        return _interp_monotone(val, xs, ys)
 
     def invert_calib(self, reg: float) -> float:
-        """Inverse of apply_calib (real register -> raw), for the feedback ghost."""
+        """Inverse of apply_calib (real register -> raw), for the 3D feedback ghost only.
+        Sort by the real (output) column so the query axis is ascending even when the
+        calib's real column is non-monotonic (e.g. the thumb-flex curve 429->388)."""
         if not self.calib:
             return reg
-        xs = [p[0] for p in self.calib]
-        ys = [p[1] for p in self.calib]
+        pts = sorted(self.calib, key=lambda p: p[1])
+        ys = [p[1] for p in pts]   # real values, now ascending -> query axis
+        xs = [p[0] for p in pts]   # raw values
         return float(np.interp(reg, ys, xs))
 
 
@@ -168,6 +256,41 @@ class Feedback:
     force_g: List[int]       # 13 values (regs 18..30)
     joint_angle_deg: List[float]  # 10 values (regs 31..40)
     motor_pos: List[int]     # 6 values (regs 41..46)
+
+
+class RegisterSmoother:
+    """Temporal conditioning of the 0..1000 register vector before it is written.
+
+    Two stages, run every control tick:
+      1. spatial EMA            (alpha < 1 smooths; alpha >= 1 is a no-op),
+      2. per-register slew limit (|delta| <= max_step per tick; <= 0 disables).
+    The slew limit is the master "no abrupt motion" guarantee: even if the optimizer
+    or calib produce a step (e.g. DexPilot's pinch projection), the hand eases toward
+    it at <= max_step/tick instead of snapping. Shared by the live control loop and
+    the offline smoothness check so both see identical conditioning."""
+
+    def __init__(self, alpha: float = 1.0, max_step: float = 0.0):
+        self.alpha = float(alpha)
+        self.max_step = float(max_step)
+        self._ema: Optional[np.ndarray] = None
+        self._cmd: Optional[np.ndarray] = None
+
+    def reset(self):
+        self._ema = None
+        self._cmd = None
+
+    def step(self, target) -> np.ndarray:
+        target = np.asarray(target, dtype=float)
+        if self._ema is None or self.alpha >= 1.0:
+            self._ema = target.copy()
+        else:
+            self._ema = self._ema + self.alpha * (target - self._ema)
+        if self._cmd is None or self.max_step <= 0:
+            self._cmd = self._ema.copy()
+        else:
+            self._cmd = self._cmd + np.clip(self._ema - self._cmd,
+                                            -self.max_step, self.max_step)
+        return self._cmd
 
 
 class HandDriver:

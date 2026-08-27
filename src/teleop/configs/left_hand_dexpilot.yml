@@ -15,3 +15,8 @@ retargeting:
 
   scaling_factor: 1.0
   low_pass_alpha: 0.25
+
+  # DexPilot pinch-projection thresholds (meters); see right_hand_dexpilot.yml.
+  # Shrunk from the 0.03/0.05 defaults so the pinch closes smoothly (no hard pull).
+  project_dist: 0.010
+  escape_dist: 0.020

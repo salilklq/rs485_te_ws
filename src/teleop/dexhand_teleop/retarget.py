@@ -59,6 +59,25 @@ class HandRetargeter:
         if self.retargeting.filter is not None:
             self.retargeting.filter.alpha = float(np.clip(value, 0.0, 1.0))
 
+    @property
+    def project_dist(self) -> float:
+        """DexPilot pinch-snap engage distance (m); smaller = less abrupt pull."""
+        return float(getattr(self.optimizer, "project_dist", 0.0))
+
+    @project_dist.setter
+    def project_dist(self, value: float):
+        if hasattr(self.optimizer, "project_dist"):
+            self.optimizer.project_dist = float(value)
+
+    @property
+    def escape_dist(self) -> float:
+        return float(getattr(self.optimizer, "escape_dist", 0.0))
+
+    @escape_dist.setter
+    def escape_dist(self, value: float):
+        if hasattr(self.optimizer, "escape_dist"):
+            self.optimizer.escape_dist = float(value)
+
     def reset(self):
         self.retargeting.reset()
         if self.retargeting.filter is not None:
